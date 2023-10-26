@@ -1,2 +1,3 @@
 add raw/1.0.txt
+add codes.hmm
 add mod.ini
