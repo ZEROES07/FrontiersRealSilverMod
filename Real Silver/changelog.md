@@ -1,2 +1,2 @@
-## 1.0 test
--1.0
+## Code errors hotfix
+- Should fix the code errors some people were getting
