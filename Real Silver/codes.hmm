@@ -1,0 +1,619 @@
+Code "Silver Boost" in "Graphics" by "Pierrot"
+//
+    #lib "Sonic"
+    #lib "Player"
+	#lib "Lua"
+	#lib "HMM"
+	#lib "INI"
+    #include "BlackboardStatus" noemit
+
+    static bool particleVisible = false;
+//
+{
+	var pBlackboardStatus = BlackboardStatus.Get();
+    if (pBlackboardStatus == null) {
+        return;
+    }
+	Lua.Call("LoadLevel", "stage_cyber_common");
+
+    if (BlackboardStatus.Get() == null) {
+        return;
+    }
+    
+    if (Player.GetPlayerType() != Player.PlayerType.Sonic) {
+        return;
+    }
+
+    Sonic.StateID state = Player.State.GetCurrentStateID<Sonic.StateID>();
+    bool isBoost = IS_STATE_FLAG(IsBoost);
+
+    Sonic.Effect.SetCyloopAuraVisibility(isBoost);
+
+    if (isBoost && !particleVisible) {
+		Player.Effect.PlayEffect("boost_front_main", !pBlackboardStatus->IsSuper ? "ec_ft_pow_dash_ge01_round_blue01" : "" );
+		Player.Effect.PlayEffect("boost_front_cloudy", !pBlackboardStatus->IsSuper ? "ec_ft_pow_dash_ge01_set01" : "" );
+		Player.Effect.PlayEffect("boost_front_dark", !pBlackboardStatus->IsSuper ? "ec_ft_pow_dash_ge01_blue_line01" : "" );
+		Player.Effect.PlayEffect("boost_trail", !pBlackboardStatus->IsSuper ? "ec_ft_pow_dash_ge01_lightning_line01" : "" );
+		Player.Effect.PlayEffect("boost_plight", !pBlackboardStatus->IsSuper ? "ec_ft_pow_dash_ge01_plight01" : "" );
+        particleVisible = true;
+    }
+
+    if (!isBoost && particleVisible) {
+        Player.Effect.StopEffect("boost_front_main");
+		Player.Effect.StopEffect("boost_front_cloudy");
+		Player.Effect.StopEffect("boost_front_dark");
+		Player.Effect.StopEffect("boost_trail");
+		Player.Effect.StopEffect("boost_plight");
+        particleVisible = false;
+    }
+}
+Code "Stomp Distortion" in "Graphics" by "Pierrot"
+//
+    #lib "Sonic"
+    #lib "Player"
+	#lib "HMM"
+	#lib "INI"
+	
+	static bool stompPlayed = false;
+//
+{
+    if (Player.GetPlayerType() != Player.PlayerType.Sonic) {
+        return;
+    }
+
+    if (Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateStompingDown)
+    {
+        if (!stompPlayed)
+        {
+            Player.Effect.PlayEffect("stomp_line", "ec_ft_dash_ge01_front_air02")
+            Player.Effect.PlayEffect("stomp_line", "ec_ft_dash_ge01_front_air02")
+            Player.Effect.PlayEffect("stomp_line", "ec_ft_dash_ge01_front_air02")
+            stompPlayed = true;
+        }
+    }
+    else
+    {
+        stompPlayed = false;
+        Player.Effect.StopEffect("stomp_line")
+    }
+}
+Code "Locus Homing" in "Graphics" by "Locomotivesss edited by Pierrot"
+//
+    #lib "Sonic"
+    #lib "Player"
+    #include "BlackboardStatus" noemit
+    
+    #load "System.Runtime.dll"
+	
+    using System.Collections.Generic;
+	
+    static bool showLocusParticle = false;
+    static bool particleVisible = false;
+    
+    static List<Sonic.StateID> LocusStates = new(){
+        Sonic.StateID.StateHomingAttackRoot,
+        Sonic.StateID.StateHomingAttack
+    };
+//
+{
+    var pBlackboardStatus = BlackboardStatus.Get();
+    if (pBlackboardStatus == null) {
+        return;
+    }
+
+    if (Player.GetPlayerType() != Player.PlayerType.Sonic) {
+        return;
+    }
+
+    Sonic.StateID state = Player.State.GetCurrentStateID<Sonic.StateID>();
+    
+    showLocusParticle = LocusStates.Contains(state);
+
+    if (showLocusParticle && !particleVisible) {
+        Player.Effect.PlayEffect("additional_locus", pBlackboardStatus->IsSuper ? "ec_ss_stomp_locus01" : "ec_so_stomp_locus01");
+        particleVisible = true;
+    
+    }
+    if (!showLocusParticle && particleVisible) {
+        Player.Effect.StopEffect("additional_locus");
+        particleVisible = false;
+    }
+}
+
+Code "Disable Squat" in "Gameplay" by "Locomotivesss because the frenchie couldn't" does "Makes Zeroes happy"
+//
+    #lib "Player"
+	#lib "HMM"
+	#lib "INI"
+
+    #load "PresentationCore.dll"
+    #load "PresentationFramework.dll"
+    #load "WindowsBase.dll"
+    #load "System.Windows.Forms.dll"
+
+    using System;
+    using System.IO;
+    using System.Collections.Generic;
+    using System.Windows.Forms;
+
+    const string ModFolderName = "Real Silver";
+
+    static string GetModPath() {
+        // Reads the user's current mod profile INI
+        var modsDb = HMM.GetModsDatabase();
+        string modIniPath = string.Empty;
+
+        // Traverses the mod profile INI to find our mod
+        foreach (var entry in modsDb["Mods"])
+        {
+            if (entry.Value.Contains(ModFolderName))
+            {
+                // Found our mod, so store the path to its mod.ini in modIniPath
+                modIniPath = entry.Value;
+            }
+        }
+
+        // Ensure mod.ini exists (it always should)
+        if (!File.Exists(modIniPath)) {
+            MessageBox.Show("Couldn't Find Mold Folder!", "Error", MessageBoxButtons.OK);
+            System.Environment.Exit(1);
+            return "";
+        }
+        // Get the path to mod.ini
+        string modPath = Path.GetDirectoryName(modIniPath);
+        return modPath;
+    }
+
+    static Dictionary<string, Dictionary<string, string>> GetModINI() {   
+        // Get the path to mod.ini
+        string modPath = GetModPath();
+
+        // Get the path to our mod config INI
+        string configIniPath = Path.Combine(modPath, "config.ini");
+
+        if (!File.Exists(configIniPath)) {
+            MessageBox.Show("Couldn't Find INI File!", "Error", MessageBoxButtons.OK);
+            System.Environment.Exit(1);
+            return new Dictionary<string, Dictionary<string, string>>();
+        }
+
+        /* If you intend to store your config params in mod.ini, change configIniPath here
+        to modIniPath and remove the previous code until the File.Exists(modIniPath) condition */
+        return INI.Read(configIniPath);
+    }
+
+    static bool SQUAT_ENABLED = true;
+
+    static bool init = false;
+//
+{
+
+    if (!init) {
+        init = true;
+        SQUAT_ENABLED = bool.Parse(GetModINI()["Squat"]["enabled"]);
+    }
+
+    if (SQUAT_ENABLED)
+        return;
+
+    if (Player.GetPlayerType() != Player.PlayerType.Sonic) {
+        return;
+    }
+
+    if (Player.Kinematics.GetMagnitude() <= 0.0f) {
+        Player.State.Redirect(Sonic.StateID.StateSquat, Sonic.StateID.StateStand);
+        Player.State.Redirect(Sonic.StateID.StateSquatRoot, Sonic.StateID.StateStandRoot);   
+    }
+    else {
+        Player.State.Redirect(Sonic.StateID.StateSquat, Sonic.StateID.StateRun);
+        Player.State.Redirect(Sonic.StateID.StateSquatRoot, Sonic.StateID.StateRun);
+    }
+}
+
+Code "Akurat Hover" in "Gameplay" by "Locomotivesss" does "Makes Loco happy"
+//
+    #include "BlackboardStatus" noemit
+    #lib "Player"
+    #lib "VectorHelpers"
+    #lib "Time"
+    #lib "MathHelpers"
+	#lib "HMM"
+	#lib "INI"
+
+    #include "Reflection" noemit
+    #lib "Reflection"
+    #lib "SonicParameters"
+    
+    #load "System.Numerics.dll"
+    #load "PresentationCore.dll"
+    #load "PresentationFramework.dll"
+    #load "WindowsBase.dll"
+    #load "System.Windows.Forms.dll"
+
+    #import "Plugins"
+
+    using System;
+    using System.IO;
+    using System.Collections.Generic;
+    using System.Windows.Forms;
+    using System.Numerics;
+
+    static float HOVER_SPEED_NORMAL = 55.0f;
+    static float HOVER_SPEED_A_BUTTON = 80.0f;
+    static float hover_speed = 55.0f;
+
+    static bool A_BUTTON_HELD = false;
+
+    static float BOOST_DRAIN_NORMAL = 10.0f;
+    static float BOOST_DRAIN_A_BUTTON = 17.0f;
+
+    static bool HOVER_ENABLED = true;
+
+    static bool enter_boost = false;
+
+    const string ModFolderName = "Real Silver";
+
+    static string GetModPath() {
+        // Reads the user's current mod profile INI
+        var modsDb = HMM.GetModsDatabase();
+        string modIniPath = string.Empty;
+
+        // Traverses the mod profile INI to find our mod
+        foreach (var entry in modsDb["Mods"])
+        {
+            if (entry.Value.Contains(ModFolderName))
+            {
+                // Found our mod, so store the path to its mod.ini in modIniPath
+                modIniPath = entry.Value;
+            }
+        }
+
+        // Ensure mod.ini exists (it always should)
+        if (!File.Exists(modIniPath)) {
+            MessageBox.Show("Couldn't Find Mold Folder!", "Error", MessageBoxButtons.OK);
+            System.Environment.Exit(1);
+            return "";
+        }
+        // Get the path to mod.ini
+        string modPath = Path.GetDirectoryName(modIniPath);
+        return modPath;
+    }
+
+    static Dictionary<string, Dictionary<string, string>> GetModINI() {   
+        // Get the path to mod.ini
+        string modPath = GetModPath();
+
+        // Get the path to our mod config INI
+        string configIniPath = Path.Combine(modPath, "config.ini");
+
+        if (!File.Exists(configIniPath)) {
+            MessageBox.Show("Couldn't Find INI File!", "Error", MessageBoxButtons.OK);
+            System.Environment.Exit(1);
+            return new Dictionary<string, Dictionary<string, string>>();
+        }
+
+        /* If you intend to store your config params in mod.ini, change configIniPath here
+        to modIniPath and remove the previous code until the File.Exists(modIniPath) condition */
+        return INI.Read(configIniPath);
+    }
+
+    static bool init = false;
+//
+{
+    if (!init) {
+        init = true;
+        HOVER_SPEED_NORMAL = float.Parse(GetModINI()["Hover"]["hover_speed"]);
+        HOVER_SPEED_A_BUTTON = float.Parse(GetModINI()["Hover"]["hover_speed_a_button"]);
+        HOVER_ENABLED = bool.Parse(GetModINI()["Hover"]["enabled"]);
+        BOOST_DRAIN_NORMAL = float.Parse(GetModINI()["Hover"]["boost_drain"]);
+        BOOST_DRAIN_A_BUTTON = float.Parse(GetModINI()["Hover"]["boost_drain_a_button"]);
+
+        if (HOVER_ENABLED && HMM.GetCodes().Contains("Fix Air Boost Reset")) {
+            MessageBox.Show("Disable Code 'Fix Air Boost Reset' In HMM.", "Conflicting Codes Error", MessageBoxButtons.OK);
+            System.Environment.Exit(1);
+        }
+    }
+
+    if (!HOVER_ENABLED)
+        return;
+
+    if (Player.GetPlayerType() != Player.PlayerType.Sonic)
+        return;
+    
+    if (IS_WORLD_FLAG(IsDead) || IS_WORLD_FLAG(IsDamagedOrRepelled))
+        return;
+
+    var kinematics = Player.Kinematics.Get();
+    
+    if (kinematics == null)
+        return;
+
+    var SonicParametersInfo = Reflection.GetDataInfo<SonicParameters.Root>("player_common");
+
+	if (SonicParametersInfo.pData == null)
+		return;
+
+    RFL_SET_CONTEXTUAL_PLAYER_PARAM(SonicParametersInfo, modePackage.airboost.gravityRate, 0.0f);
+    RFL_SET_CONTEXTUAL_PLAYER_PARAM(SonicParametersInfo, modePackage.airboost.maxTime, 999.0f);
+    RFL_SET_CONTEXTUAL_PLAYER_PARAM(SonicParametersInfo, modePackage.airboost.steeringSpeed, 150.0f);
+    
+    var pStatePluginBoost = Player.State.GetStatePlugin<StatePluginBoost>();
+
+    if (pStatePluginBoost == null)
+        return;
+
+    Sonic.StateID state = Player.State.GetCurrentStateID<Sonic.StateID>();
+    Sonic.StateID prev_state = Player.State.GetPreviousStateID<Sonic.StateID>();
+
+    if (state == Sonic.StateID.StateAirBoost && !enter_boost) {
+        enter_boost = true;
+        hover_speed = MathHelpers.Lerp(HOVER_SPEED_NORMAL, Player.Kinematics.GetHorizontalMagnitude(), 0.75f);
+
+        float drain_mult = 0.5f;
+
+        if (prev_state == Sonic.StateID.StateSpinBoost || prev_state == Sonic.StateID.StateSpinBoostCharge || prev_state == Sonic.StateID.StateSpinMove) {
+            drain_mult = 1.0f;
+        }
+
+        pStatePluginBoost->BoostAmount = MathHelpers.Clamp(pStatePluginBoost->BoostAmount - ((A_BUTTON_HELD ? BOOST_DRAIN_A_BUTTON : BOOST_DRAIN_NORMAL) * drain_mult), 0.0f, pStatePluginBoost->BoostCapacity);
+    }
+    else if (state != Sonic.StateID.StateAirBoost && enter_boost)
+        enter_boost = false;
+
+    A_BUTTON_HELD = Player.Input.IsDown(Player.InputActionType.PlayerJump);
+
+    if (state == Sonic.StateID.StateAirBoost) {
+        RFL_SET_CONTEXTUAL_PLAYER_PARAM(SonicParametersInfo, modePackage.boost.consumptionRate, (A_BUTTON_HELD ? BOOST_DRAIN_A_BUTTON : BOOST_DRAIN_NORMAL));
+        
+        hover_speed = MathHelpers.Lerp(hover_speed, (A_BUTTON_HELD ? HOVER_SPEED_A_BUTTON : HOVER_SPEED_NORMAL), Time.GetDeltaTime());
+        
+        kinematics->Velocity = VectorHelpers.GetForward(kinematics->Rotation) * hover_speed;
+        
+        if (pStatePluginBoost->BoostAmount <= 0)
+            Player.State.SetState<Sonic.StateID>(Sonic.StateID.StateFall);
+    }
+    else
+        RFL_RESET_CONTEXTUAL_PLAYER_PARAM(SonicParametersInfo, SonicParameters.Root, modePackage.boost.consumptionRate);
+}
+
+Code "Fix Air Boost Reset [SILVER]" in "Fixes" by "Hyper" does "Allows Sonic to perform another Air Boost after previously using it before performing a homing attack, stomp, or using a spring." 
+//
+    #include "BlackboardStatus" noemit
+
+    #lib "Bitwise"
+    #lib "BlackboardStatus"
+    #lib "Player"
+	#lib "HMM"
+	#lib "INI"
+
+    #load "System.Numerics.dll"
+    #load "PresentationCore.dll"
+    #load "PresentationFramework.dll"
+    #load "WindowsBase.dll"
+    #load "System.Windows.Forms.dll"
+
+    using System;
+    using System.IO;
+    using System.Collections.Generic;
+    using System.Windows.Forms;
+    using System.Numerics;
+
+    using System.Collections.Generic;
+
+    static List<Sonic.StateID> AllowedStates = new()
+    {
+        Sonic.StateID.StateStompingFlip,
+        Sonic.StateID.StateStompingBounce,
+        Sonic.StateID.StateHomingFinished,
+        Sonic.StateID.StateSpringJump,
+        Sonic.StateID.StateJump,
+        Sonic.StateID.StateDoubleJump,
+        Sonic.StateID.StateAirBoost,
+        Sonic.StateID.StateFall,
+        Sonic.StateID.StateSpinBoost,
+        Sonic.StateID.StateSpinBoostCharge,
+        Sonic.StateID.StateSpinMove
+    };
+
+    static List<Sonic.StateID> DisallowedStates = new()
+    {
+        Sonic.StateID.StateDamageRoot,
+        Sonic.StateID.StateDamage,
+        Sonic.StateID.StateDamageRunning,
+        Sonic.StateID.StateDamageBlowOff,
+        Sonic.StateID.StateDamageBlowOffHeavy,
+        Sonic.StateID.StateDamageLava,
+        Sonic.StateID.StateDamageQuake,
+        Sonic.StateID.StateDamageTurnBack,
+        Sonic.StateID.StateCaught
+    };
+
+    static bool HOVER_ENABLED = true;
+
+    const string ModFolderName = "Real Silver";
+
+    static string GetModPath() {
+        // Reads the user's current mod profile INI
+        var modsDb = HMM.GetModsDatabase();
+        string modIniPath = string.Empty;
+
+        // Traverses the mod profile INI to find our mod
+        foreach (var entry in modsDb["Mods"])
+        {
+            if (entry.Value.Contains(ModFolderName))
+            {
+                // Found our mod, so store the path to its mod.ini in modIniPath
+                modIniPath = entry.Value;
+            }
+        }
+
+        // Ensure mod.ini exists (it always should)
+        if (!File.Exists(modIniPath)) {
+            MessageBox.Show("Couldn't Find Mold Folder!", "Error", MessageBoxButtons.OK);
+            System.Environment.Exit(1);
+            return "";
+        }
+        // Get the path to mod.ini
+        string modPath = Path.GetDirectoryName(modIniPath);
+        return modPath;
+    }
+
+    static Dictionary<string, Dictionary<string, string>> GetModINI() {   
+        // Get the path to mod.ini
+        string modPath = GetModPath();
+
+        // Get the path to our mod config INI
+        string configIniPath = Path.Combine(modPath, "config.ini");
+
+        if (!File.Exists(configIniPath)) {
+            MessageBox.Show("Couldn't Find INI File!", "Error", MessageBoxButtons.OK);
+            System.Environment.Exit(1);
+            return new Dictionary<string, Dictionary<string, string>>();
+        }
+
+        /* If you intend to store your config params in mod.ini, change configIniPath here
+        to modIniPath and remove the previous code until the File.Exists(modIniPath) condition */
+        return INI.Read(configIniPath);
+    }
+
+    static bool init = false;
+
+    static bool _isInitialised = false;
+    static bool _isRestoredAirBoost = false;
+//
+{
+
+    if (!init) {
+        init = true;
+        HOVER_ENABLED = bool.Parse(GetModINI()["Hover"]["enabled"]);
+    }
+
+    if (!HOVER_ENABLED) {
+        return;
+    }
+
+    if (Player.GetPlayerType() != Player.PlayerType.Sonic)
+        return;
+
+    if (!_isInitialised)
+    {
+        Sonic.StateID NotifyAirBoostReset(Sonic.StateID in_stateId, Sonic.StateID[] in_stateStackTrace)
+        {   
+            // Reset flag for StateSpinBoost.
+            if (DisallowedStates.Contains(in_stateId))
+            {
+                _isRestoredAirBoost = false;
+                return in_stateId;
+            }
+
+            if (AllowedStates.Contains(in_stateId)) {
+                _isRestoredAirBoost = true;
+            }
+
+            if (IS_WORLD_FLAG(IsDead) || IS_WORLD_FLAG(IsDamagedOrRepelled)) {
+                _isRestoredAirBoost = false;
+                return in_stateId;
+            }
+
+            return in_stateId;
+        }
+
+        Player.State.AddStateNotifyAction<Sonic.StateID>(NotifyAirBoostReset);
+
+        _isInitialised = true;
+    }
+
+    if (IS_WORLD_FLAG(IsDead) || IS_WORLD_FLAG(IsDamagedOrRepelled))
+        return;
+
+    // Disable restored air boost for Super Sonic.
+    if (BlackboardStatus.IsSuper()) {
+        _isRestoredAirBoost = false;
+        return;
+    }
+
+    // Disable restored air boost for diving.
+    if (IS_STATE_FLAG(IsDiving)) {
+        _isRestoredAirBoost = false;
+        return;
+    }
+
+    if (Player.Input.IsPressed(Player.InputActionType.PlayerBoost) && !Player.Status.IsGroundedSpecial() && _isRestoredAirBoost)
+    {
+        Player.State.SetState<Sonic.StateID>(Sonic.StateID.StateAirBoost);
+    }
+}
+
+Patch "Disable Corruption Animations" in "Animation" by "Hyper" does "Disables the animations for when Sonic becomes increasingly more corrupted in the later islands." 
+{
+    // LANDING_CORRUPTION_WEAK
+    WriteProtected<byte>
+    (
+        /* v1.10: 0x140830C7D */
+        ScanSignature
+        (
+            "\x74\x15\xB8\x04\x00\x00\x00\x48\x8B\x5C\x24\x30",
+            "xxxxxxxxxxxx"
+        ),
+
+        0xEB
+    );
+
+    // LANDING_CORRUPTION_STRONG
+    WriteNop
+    (
+        /* v1.10: 0x140830CA8 */
+        ScanSignature
+        (
+            "\xBA\x05\x00\x00\x00\x0F\x45\xCA\x8B\xC1",
+            "xxxxxxxxxx"
+        ),
+
+        8
+    );
+
+    // IDLE_CORRUPTION_WEAK_LOOP
+    WriteProtected<byte>
+    (
+        /* v1.10: 0x140830DB4 */
+        ScanSignature
+        (
+            "\x74\x15\xB8\x0B\x00\x00\x00",
+            "xxxxxxx"
+        ),
+
+        0xEB
+    );
+
+    // IDLE_CORRUPTION_STRONG_LOOP
+    WriteProtected<byte>
+    (
+        /* v1.10: 0x140830DDA */
+        ScanSignature
+        (
+            "\x74\x15\xB8\x0C\x00\x00\x00",
+            "xxxxxxx"
+        ),
+
+        0xEB
+    );
+}
+
+Code "Hover Airboost Animation" in "Animation" by "archxe" does "Makes Locomotivesss happy"
+//
+    #lib "Player"
+	#lib "HMM"
+	#lib "INI"
+//
+{
+    if (Player.GetPlayerType() != Player.PlayerType.Sonic) {
+        return;
+    }
+
+    Sonic.StateID state = Player.State.GetCurrentStateID<Sonic.StateID>();
+    
+    if (state == Sonic.StateID.StateAirBoost)
+    {
+        Player.Animation.SetAnimation("STOMP_CONS");
+    }
+}
