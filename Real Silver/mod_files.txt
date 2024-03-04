@@ -1,6 +1,16 @@
-add raw/1.1.1.txt
 add raw/character/sonic.pac
+add raw/character/supersonic.pac
+add raw/character/supersonic2.pac
 add raw/dlc/dlccrm/dlccrm.pac
+add raw/dlc/dlcmhr/dlcmhr_costume_airou.pac
+add raw/EffectCommon.pac
+add raw/2.0.txt
+add raw/ui/rpl_texture_island.pac
+add raw/ui/ui_common.pac
+add raw/ui/ui_gamemodeopening_en.pac
+add raw/ui/ui_gamemodestage.pac
+add raw/ui/ui_gamemodetitle_en.pac
 add raw/sound/voice_rangers_sonic_es.acb
 add codes.hmm
+add OutfitFixes.ini
 add mod.ini

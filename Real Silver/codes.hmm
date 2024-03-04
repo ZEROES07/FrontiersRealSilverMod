@@ -3,11 +3,9 @@ Code "Silver Boost" in "Graphics" by "Pierrot"
     #lib "Sonic"
     #lib "Player"
 	#lib "Lua"
-	#lib "HMM"
-	#lib "INI"
     #include "BlackboardStatus" noemit
 
-    static bool particleVisible = false;
+    static bool boostVisible = false;
 //
 {
 	var pBlackboardStatus = BlackboardStatus.Get();
@@ -24,35 +22,33 @@ Code "Silver Boost" in "Graphics" by "Pierrot"
         return;
     }
 
-    Sonic.StateID state = Player.State.GetCurrentStateID<Sonic.StateID>();
     bool isBoost = IS_STATE_FLAG(IsBoost);
 
     Sonic.Effect.SetCyloopAuraVisibility(isBoost);
 
-    if (isBoost && !particleVisible) {
-		Player.Effect.PlayEffect("boost_front_main", !pBlackboardStatus->IsSuper ? "ec_ft_pow_dash_ge01_round_blue01" : "" );
-		Player.Effect.PlayEffect("boost_front_cloudy", !pBlackboardStatus->IsSuper ? "ec_ft_pow_dash_ge01_set01" : "" );
-		Player.Effect.PlayEffect("boost_front_dark", !pBlackboardStatus->IsSuper ? "ec_ft_pow_dash_ge01_blue_line01" : "" );
-		Player.Effect.PlayEffect("boost_trail", !pBlackboardStatus->IsSuper ? "ec_ft_pow_dash_ge01_lightning_line01" : "" );
-		Player.Effect.PlayEffect("boost_plight", !pBlackboardStatus->IsSuper ? "ec_ft_pow_dash_ge01_plight01" : "" );
-        particleVisible = true;
+    if (isBoost && Player.State.GetCurrentStateID<Sonic.StateID>() != Sonic.StateID.StateSpinBoost && !boostVisible) {
+		Player.Effect.PlayEffect("boost_front_main", !pBlackboardStatus->IsSuper ? "ec_so_boost_front01" : "ec_ss_boost_front01" );
+		Player.Effect.PlayEffect("boost_front_sec", !pBlackboardStatus->IsSuper ? "ec_so_boost_front02" : "ec_ss_boost_front02" );
+		Player.Effect.PlayEffect("boost_particles", !pBlackboardStatus->IsSuper ? "ec_so_boost_par01" : "ec_ss_boost_par01" );
+		Player.Effect.PlayEffect("boost_trail", !pBlackboardStatus->IsSuper ? "ec_so_boost_trail01" : "ec_ss_boost_trail01" );
+		Player.Effect.PlayEffect("boost_plight", !pBlackboardStatus->IsSuper ? "ec_so_boost_plight01" : "ec_ss_boost_plight01" );
+        boostVisible = true;
     }
 
-    if (!isBoost && particleVisible) {
+    if (!isBoost || Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateSpinBoost && boostVisible) {
         Player.Effect.StopEffect("boost_front_main");
-		Player.Effect.StopEffect("boost_front_cloudy");
-		Player.Effect.StopEffect("boost_front_dark");
+		Player.Effect.StopEffect("boost_front_sec");
+		Player.Effect.StopEffect("boost_particles");
 		Player.Effect.StopEffect("boost_trail");
 		Player.Effect.StopEffect("boost_plight");
-        particleVisible = false;
+        boostVisible = false;
     }
 }
-Code "Stomp Distortion" in "Graphics" by "Pierrot"
+
+Code "Stomp Trail" in "Graphics"
 //
     #lib "Sonic"
-    #lib "Player"
-	#lib "HMM"
-	#lib "INI"
+	#lib "Player"
 	
 	static bool stompPlayed = false;
 //
@@ -60,23 +56,20 @@ Code "Stomp Distortion" in "Graphics" by "Pierrot"
     if (Player.GetPlayerType() != Player.PlayerType.Sonic) {
         return;
     }
-
-    if (Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateStompingDown)
-    {
-        if (!stompPlayed)
-        {
-            Player.Effect.PlayEffect("stomp_line", "ec_ft_dash_ge01_front_air02")
-            Player.Effect.PlayEffect("stomp_line", "ec_ft_dash_ge01_front_air02")
-            Player.Effect.PlayEffect("stomp_line", "ec_ft_dash_ge01_front_air02")
+    if (Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateStompingDown) {
+        if (!stompPlayed) {
+            Player.Effect.PlayEffect("stomp_trail", BlackboardStatus.IsSuper() ? "" : "ec_so_stomp_loop_trail01");
+			Player.Effect.PlayEffect("stomp_wind", BlackboardStatus.IsSuper() ? "" : "ec_so_stomp_loop_wind01");
             stompPlayed = true;
         }
     }
-    else
-    {
+    else {
         stompPlayed = false;
-        Player.Effect.StopEffect("stomp_line")
+        Player.Effect.StopEffect("stomp_trail");
+		Player.Effect.StopEffect("stomp_wind");
     }
 }
+
 Code "Locus Homing" in "Graphics" by "Locomotivesss edited by Pierrot"
 //
     #lib "Sonic"
@@ -615,5 +608,39 @@ Code "Hover Airboost Animation" in "Animation" by "archxe" does "Makes Locomotiv
     if (state == Sonic.StateID.StateAirBoost)
     {
         Player.Animation.SetAnimation("STOMP_CONS");
+    }
+}
+
+Code "Combat Aura" in "Graphics" by "Pierrot"
+//
+    #lib "Sonic"
+    #lib "Player"
+    #include "BlackboardStatus" noemit
+
+//
+{
+	var pBlackboardStatus = BlackboardStatus.Get();
+    if (pBlackboardStatus == null) {
+        return;
+    }
+
+    if (BlackboardStatus.Get() == null) {
+        return;
+    }
+    
+    if (Player.GetPlayerType() != Player.PlayerType.Sonic) {
+        return;
+    }
+
+    if (Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateChargeAttack ||
+		Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateCrasher ||
+		Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateCrossSlash ||
+		Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateHomingShot ||
+		Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateLoopKick ||
+		Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StatePursuitKick ||
+		Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateSmash ||
+		Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateSonicBoomKick ||
+		Player.State.GetCurrentStateID<Sonic.StateID>() == Sonic.StateID.StateSpinSlash) {
+		Sonic.Effect.SetCyloopAuraVisibility(true);
     }
 }
